@@ -24,6 +24,7 @@ from ..tools import (
 )
 import aioredis
 
+logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 class MarketDataAgent(BaseAgent):
@@ -179,15 +180,26 @@ class TechnicalAgent(BaseAgent):
 
     async def analyze(self, price_data, market_data, show_reasoning=False, symbol=None):
         try:
-            # Debug logging
-            logging.debug(f"Price data type: {type(price_data)}")
-            logging.debug(f"Price data structure: {json.dumps(price_data, default=str)[:200]}...")  # First 200 chars
-
+           
             # Convert price_data to DataFrame if it's a dictionary
             if isinstance(price_data, dict):
                 try:
-                    # Assuming price_data has a structure like {'prices': [{'timestamp': ..., 'price': ...}, ...]}
-                    if 'prices' in price_data:
+                    # Handle the nested structure from data.json
+                    if 'data' in price_data and 'quotes' in price_data['data']:
+                        quotes = price_data['data']['quotes']
+                        data_list = []
+                        for quote in quotes:
+                            data_list.append({
+                                'timestamp': quote['timestamp'],
+                                'close': quote['quote']['USD']['price'],
+                                'volume': quote['quote']['USD']['volume_24h'],
+                                'market_cap': quote['quote']['USD']['market_cap']
+                            })
+                        df = pd.DataFrame(data_list)
+                        df['timestamp'] = pd.to_datetime(df['timestamp'])
+                        df.set_index('timestamp', inplace=True)
+                    # Keep the existing logic for other data formats
+                    elif 'prices' in price_data:
                         df = pd.DataFrame(price_data['prices'])
                         df['close'] = df['price']  # Rename 'price' to 'close'
                         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')

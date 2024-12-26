@@ -55,6 +55,7 @@ const AnalysisPage = () => {
   ]);
   const [loading, setLoading] = useState(false);
   const [selectedAIProvider, setSelectedAIProvider] = useState<string>("openai");
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const aiProviders = [
     { id: 'openai', name: 'OpenAI' },
@@ -134,6 +135,21 @@ const AnalysisPage = () => {
     return () => debouncedRefresh.cancel();
   }, [debouncedRefresh]); // Only depend on debouncedRefresh
 
+  const handleCollapsibleChange = (isOpen: boolean, index: number) => {
+    setOpenIndex(isOpen ? index : null);
+    
+    if (isOpen) {
+      // Small timeout to ensure the content is rendered before scrolling
+      setTimeout(() => {
+        const element = document.getElementById(`agent-${index}`);
+        element?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -195,8 +211,15 @@ const AnalysisPage = () => {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">AI Agent Analysis</h2>
         {agents.map((agent, index) => (
-          <Collapsible key={index}>
-            <Card className="transition-all duration-200 hover:shadow-md hover:bg-muted/20">
+          <Collapsible 
+            key={index}
+            open={openIndex === index}
+            onOpenChange={(isOpen) => handleCollapsibleChange(isOpen, index)}
+          >
+            <Card 
+              id={`agent-${index}`}
+              className="transition-all duration-200 hover:shadow-md hover:bg-muted/20"
+            >
               <CollapsibleTrigger className="w-full">
                 <CardHeader className="border-b bg-muted/40 flex flex-row items-center justify-between hover:bg-muted/60 transition-colors duration-200">
                   <CardTitle className="text-xl">{agent.title}</CardTitle>
