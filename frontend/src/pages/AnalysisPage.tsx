@@ -99,23 +99,48 @@ const AnalysisPage = () => {
   // Separate data fetching logic
   const fetchData = async () => {
     setLoading(true);
+    
+    // Fetch market data first
     try {
-      const [marketResponse, analysisResponse] = await Promise.all([
-        fetch(buildUrl('marketData', selectedCrypto)),
-        fetch(`${buildUrl('analysis', selectedCrypto)}?provider=${selectedAIProvider}`)
-      ]);
+      const marketResponse = await fetch(buildUrl('marketData', selectedCrypto), {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
       
-      const [marketData, analysisData] = await Promise.all([
-        marketResponse.json(),
-        analysisResponse.json()
-      ]);
+      if (!marketResponse.ok) {
+        throw new Error('Market data fetch failed');
+      }
 
-      setMarketData(marketData);
+      const marketData = await marketResponse.json();
+      setMarketData(marketData); // Update market data immediately
+
+      // Then fetch analysis data
+      const analysisResponse = await fetch(
+        `${buildUrl('analysis', selectedCrypto)}?provider=${selectedAIProvider}`,
+        {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (!analysisResponse.ok) {
+        throw new Error('Analysis data fetch failed');
+      }
+
+      const analysisData = await analysisResponse.json();
       setAgents(analysisData.agents);
+
     } catch (error) {
+      console.error('Fetch error:', error);
       toast({
         title: "Error",
-        description: "Failed to update data. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update data",
         variant: "destructive",
       });
     } finally {
@@ -240,14 +265,65 @@ const AnalysisPage = () => {
                     className="prose dark:prose-invert max-w-none"
                     components={{
                       h3: ({children}) => (
-                        <h3 className="text-lg font-semibold mt-4 mb-2">{children}</h3>
+                        <h3 className="text-xl font-bold mt-8 mb-4 text-primary border-b pb-2">{children}</h3>
                       ),
+                      h4: ({children}) => (
+                        <h4 className="text-lg font-semibold mt-6 mb-3 text-foreground">{children}</h4>
+                      ),
+                      
                       ul: ({children}) => (
-                        <ul className="list-disc pl-6 space-y-1 mb-4">{children}</ul>
+                        <ul className="list-disc pl-6 space-y-2 my-4">{children}</ul>
                       ),
+                      ol: ({children}) => (
+                        <ol className="list-decimal pl-6 space-y-2 my-4">{children}</ol>
+                      ),
+                      li: ({children}) => (
+                        <li className="text-muted-foreground leading-relaxed">{children}</li>
+                      ),
+                      
                       p: ({children}) => (
-                        <p className="mb-3">{children}</p>
-                      )
+                        <p className="text-muted-foreground leading-relaxed mb-4">{children}</p>
+                      ),
+                      strong: ({children}) => (
+                        <strong className="font-bold text-foreground">{children}</strong>
+                      ),
+                      em: ({children}) => (
+                        <em className="text-primary/80 not-italic font-medium">{children}</em>
+                      ),
+                      
+                      hr: () => (
+                        <hr className="my-8 border-border/40" />
+                      ),
+                      
+                      blockquote: ({children}) => (
+                        <blockquote className="border-l-4 border-primary pl-4 my-4 italic text-muted-foreground">
+                          {children}
+                        </blockquote>
+                      ),
+                      
+                      table: ({children}) => (
+                        <div className="overflow-x-auto my-6">
+                          <table className="min-w-full divide-y divide-border">
+                            {children}
+                          </table>
+                        </div>
+                      ),
+                      th: ({children}) => (
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground bg-muted">
+                          {children}
+                        </th>
+                      ),
+                      td: ({children}) => (
+                        <td className="px-4 py-2 text-sm text-muted-foreground">
+                          {children}
+                        </td>
+                      ),
+                      
+                      code: ({children}) => (
+                        <code className="px-1.5 py-0.5 rounded-md bg-muted text-primary font-mono text-sm">
+                          {children}
+                        </code>
+                      ),
                     }}
                   >
                     {formatMarkdownContent(agent.content)}

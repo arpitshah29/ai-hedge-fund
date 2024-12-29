@@ -289,7 +289,7 @@ class TechnicalAgent(BaseAgent):
                 {reasoning_request}
                 """
                 
-                print(f"TechnicalAgent Prompt:\n{prompt}")
+                #print(f"TechnicalAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
                 
                 # If show_reasoning is False, try to extract just the conclusions
@@ -363,7 +363,7 @@ class RiskManagementAgent(BaseAgent):
                 {reasoning_request}
                 """
                 
-                print(f"RiskManagementAgent Prompt:\n{prompt}")
+                #print(f"RiskManagementAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
                 
                 # If show_reasoning is False, try to extract just the conclusions
@@ -432,7 +432,7 @@ class PortfolioAgent(BaseAgent):
                 {reasoning_request}
                 """
                 
-                print(f"PortfolioAgent Prompt:\n{prompt}")
+                #print(f"PortfolioAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
                 
                 # If show_reasoning is False, try to extract just the conclusions
