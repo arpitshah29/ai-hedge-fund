@@ -264,65 +264,59 @@ const AnalysisPage = () => {
                   <ReactMarkdown 
                     className="prose dark:prose-invert max-w-none"
                     components={{
+                      // Headers with icons and colors
                       h3: ({children}) => (
-                        <h3 className="text-xl font-bold mt-8 mb-4 text-primary border-b pb-2">{children}</h3>
+                        <h3 className="text-xl font-bold mt-8 mb-4 text-primary flex items-center gap-2 border-b pb-2">
+                          {children}
+                        </h3>
                       ),
                       h4: ({children}) => (
-                        <h4 className="text-lg font-semibold mt-6 mb-3 text-foreground">{children}</h4>
+                        <h4 className="text-lg font-semibold mt-6 mb-3 text-foreground/90 flex items-center gap-2">
+                          {children}
+                        </h4>
                       ),
                       
+                      // Enhanced lists
                       ul: ({children}) => (
-                        <ul className="list-disc pl-6 space-y-2 my-4">{children}</ul>
+                        <ul className="list-none pl-6 space-y-2 my-4">{children}</ul>
                       ),
                       ol: ({children}) => (
-                        <ol className="list-decimal pl-6 space-y-2 my-4">{children}</ol>
+                        <ol className="list-none pl-6 space-y-2 my-4">{children}</ol>
                       ),
                       li: ({children}) => (
-                        <li className="text-muted-foreground leading-relaxed">{children}</li>
+                        <li className="text-muted-foreground leading-relaxed flex gap-2 items-start">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{children}</span>
+                        </li>
                       ),
                       
+                      // Styled paragraphs and emphasis
                       p: ({children}) => (
                         <p className="text-muted-foreground leading-relaxed mb-4">{children}</p>
                       ),
                       strong: ({children}) => (
-                        <strong className="font-bold text-foreground">{children}</strong>
+                        <strong className="font-bold text-foreground bg-primary/10 px-1 rounded">
+                          {children}
+                        </strong>
                       ),
                       em: ({children}) => (
-                        <em className="text-primary/80 not-italic font-medium">{children}</em>
-                      ),
-                      
-                      hr: () => (
-                        <hr className="my-8 border-border/40" />
-                      ),
-                      
-                      blockquote: ({children}) => (
-                        <blockquote className="border-l-4 border-primary pl-4 my-4 italic text-muted-foreground">
+                        <em className="text-primary not-italic font-medium">
                           {children}
-                        </blockquote>
+                        </em>
                       ),
                       
-                      table: ({children}) => (
-                        <div className="overflow-x-auto my-6">
-                          <table className="min-w-full divide-y divide-border">
-                            {children}
-                          </table>
-                        </div>
-                      ),
-                      th: ({children}) => (
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground bg-muted">
-                          {children}
-                        </th>
-                      ),
-                      td: ({children}) => (
-                        <td className="px-4 py-2 text-sm text-muted-foreground">
-                          {children}
-                        </td>
-                      ),
-                      
+                      // Code blocks for metrics
                       code: ({children}) => (
-                        <code className="px-1.5 py-0.5 rounded-md bg-muted text-primary font-mono text-sm">
+                        <code className="px-2 py-0.5 rounded-md bg-muted text-primary font-mono text-sm">
                           {children}
                         </code>
+                      ),
+                      
+                      // Blockquotes for key insights
+                      blockquote: ({children}) => (
+                        <blockquote className="border-l-4 border-primary pl-4 my-4 bg-primary/5 py-2 rounded-r">
+                          {children}
+                        </blockquote>
                       ),
                     }}
                   >
