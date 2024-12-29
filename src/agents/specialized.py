@@ -24,7 +24,7 @@ from ..tools import (
 )
 import aioredis
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 class MarketDataAgent(BaseAgent):
@@ -51,7 +51,6 @@ class MarketDataAgent(BaseAgent):
         
         # Create a cache key using only hashable components
         try:
-            symbol = next(iter(market_data['data'].keys()))
             quote = market_data['data'][symbol]['quote']['USD']
             cache_key = f"{symbol}:{quote['price']}:{quote['percent_change_24h']}:{datetime.now().strftime('%Y-%m-%d-%H')}"
             
@@ -74,6 +73,7 @@ class MarketDataAgent(BaseAgent):
             # Format basic market data with clear section breaks
             market_stats = (
                 "=== MARKET STATISTICS ===\n"
+                f"Symbol:           {symbol}\n"
                 f"Current Price:    ${quote['price']:.2f}\n"
                 f"24h Change:       {quote['percent_change_24h']:.2f}%\n"
                 f"Volume:          ${quote['volume_24h']/1e6:.1f}M\n"
@@ -89,7 +89,7 @@ class MarketDataAgent(BaseAgent):
                 - Describing how you arrived at your assessment
                 """ if show_reasoning else ""
 
-                prompt = f"""Analyze the following cryptocurrency market data and provide insights:
+                prompt = f"""Analyze the following market data for {symbol} cryptocurrency and provide insights:
                 {market_stats}
                 
                 Please provide:
@@ -99,7 +99,7 @@ class MarketDataAgent(BaseAgent):
                 {reasoning_request}
                 """
                 
-                print(f"MarketDataAgent Prompt:\n{prompt}")
+                #print(f"MarketDataAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
                 
                 # If show_reasoning is False, try to extract just the conclusions
@@ -131,12 +131,13 @@ class SentimentAgent(BaseAgent):
             provider_name=provider_name
         )
 
-    async def analyze(self, price_data, market_data, show_reasoning=False, symbol=None):
+    async def analyze(self, price_data, market_data, show_reasoning=True, symbol=None):
         try:
-            quote = list(market_data['data'].values())[0]['quote']['USD']
+            quote = market_data['data'][symbol]['quote']['USD']
             
             market_stats = (
                 "=== MARKET TRENDS ===\n"
+                f"Symbol: {symbol}\n"
                 f"24h Change: {quote['percent_change_24h']:.2f}%\n"
                 f"7d Change: {quote['percent_change_7d']:.2f}%\n"
                 f"30d Change: {quote['percent_change_30d']:.2f}%\n"
@@ -144,18 +145,38 @@ class SentimentAgent(BaseAgent):
             )
 
             if self.provider:
-                prompt = f"""Analyze the market sentiment based on the following cryptocurrency data:
+                # Add reasoning request to the prompt when show_reasoning is True
+                reasoning_request = """
+                For each point, please explain your reasoning by:
+                - Citing specific data points that support your conclusion
+                - Explaining the significance of these indicators
+                - Describing how you arrived at your assessment
+                """ if show_reasoning else ""
+
+                prompt = f"""Analyze the market sentiment based on the following {symbol} cryptocurrency data:
                 {market_stats}
                 
                 Please provide:
                 1. Overall market sentiment (bullish/bearish/neutral)
                 2. Key sentiment indicators
                 3. Sentiment outlook for next 24-48 hours
+                {reasoning_request}
                 """
                 
                 print(f"SentimentAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
-                analysis = f"{response}"
+                
+                # If show_reasoning is False, try to extract just the conclusions
+                if not show_reasoning:
+                    # Split response into lines and filter out lines that look like reasoning
+                    lines = response.split('\n')
+                    analysis_lines = [
+                        line for line in lines 
+                        if not line.strip().startswith(('Because', 'This is based on', 'Given that', 'Considering'))
+                    ]
+                    analysis = '\n'.join(analysis_lines)
+                else:
+                    analysis = response
             else:
                 sentiment = "bullish" if quote['percent_change_24h'] > 0 else "bearish"
                 analysis = (
@@ -178,7 +199,7 @@ class TechnicalAgent(BaseAgent):
             provider_name=provider_name
         )
 
-    async def analyze(self, price_data, market_data, show_reasoning=False, symbol=None):
+    async def analyze(self, price_data, market_data, show_reasoning=True, symbol=None):
         try:
            
             # Convert price_data to DataFrame if it's a dictionary
@@ -249,7 +270,15 @@ class TechnicalAgent(BaseAgent):
             )
 
             if self.provider:
-                prompt = f"""Analyze these technical indicators and provide trading insights:
+                # Add reasoning request to the prompt when show_reasoning is True
+                reasoning_request = """
+                For each point, please explain your reasoning by:
+                - Citing specific data points that support your conclusion
+                - Explaining the significance of these indicators
+                - Describing how you arrived at your assessment
+                """ if show_reasoning else ""
+
+                prompt = f"""Analyze these technical indicators and provide trading insights for {symbol}:
                 {technical_data}
                 
                 Please provide:
@@ -257,11 +286,22 @@ class TechnicalAgent(BaseAgent):
                 2. Key indicator signals (RSI, MACD, Bollinger Bands)
                 3. Potential price action scenarios
                 4. Trading recommendations based on technical analysis
+                {reasoning_request}
                 """
                 
                 print(f"TechnicalAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
-                analysis = f"{response}"
+                
+                # If show_reasoning is False, try to extract just the conclusions
+                if not show_reasoning:
+                    lines = response.split('\n')
+                    analysis_lines = [
+                        line for line in lines 
+                        if not line.strip().startswith(('Because', 'This is based on', 'Given that', 'Considering'))
+                    ]
+                    analysis = '\n'.join(analysis_lines)
+                else:
+                    analysis = response
             else:
                 # Fallback to original logic
                 rsi_signal = "Overbought" if latest_rsi > 70 else "Oversold" if latest_rsi < 30 else "Neutral"
@@ -289,13 +329,14 @@ class RiskManagementAgent(BaseAgent):
             provider_name=provider_name
         )
 
-    async def analyze(self, price_data, market_data, show_reasoning=False, symbol=None):
+    async def analyze(self, price_data, market_data, show_reasoning=True, symbol=None):
         try:
-            quote = list(market_data['data'].values())[0]['quote']['USD']
+            quote = market_data['data'][symbol]['quote']['USD']
             volatility = abs(quote['percent_change_24h'])
             
             risk_data = (
                 "=== RISK METRICS ===\n"
+                f"Symbol: {symbol}\n"
                 f"24h Volatility: {volatility:.2f}%\n"
                 f"Volume Change: {quote['volume_change_24h']:.2f}%\n"
                 f"Market Cap: ${quote['market_cap']/1e9:.2f}B\n"
@@ -303,7 +344,15 @@ class RiskManagementAgent(BaseAgent):
             )
 
             if self.provider:
-                prompt = f"""Analyze the following risk metrics for this cryptocurrency:
+                # Add reasoning request to the prompt when show_reasoning is True
+                reasoning_request = """
+                For each point, please explain your reasoning by:
+                - Citing specific data points that support your conclusion
+                - Explaining the significance of these indicators
+                - Describing how you arrived at your assessment
+                """ if show_reasoning else ""
+
+                prompt = f"""Analyze the following risk metrics for {symbol} cryptocurrency:
                 {risk_data}
                 
                 Please provide:
@@ -311,11 +360,22 @@ class RiskManagementAgent(BaseAgent):
                 2. Key risk factors
                 3. Risk mitigation recommendations
                 4. Position sizing suggestions
+                {reasoning_request}
                 """
                 
                 print(f"RiskManagementAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
-                analysis = f"{response}"
+                
+                # If show_reasoning is False, try to extract just the conclusions
+                if not show_reasoning:
+                    lines = response.split('\n')
+                    analysis_lines = [
+                        line for line in lines 
+                        if not line.strip().startswith(('Because', 'This is based on', 'Given that', 'Considering'))
+                    ]
+                    analysis = '\n'.join(analysis_lines)
+                else:
+                    analysis = response
             else:
                 risk_level = "HIGH" if volatility > 10 else "MEDIUM" if volatility > 5 else "LOW"
                 analysis = (
@@ -338,12 +398,13 @@ class PortfolioAgent(BaseAgent):
             provider_name=provider_name
         )
 
-    async def analyze(self, price_data, market_data, show_reasoning=False, symbol=None):
+    async def analyze(self, price_data, market_data, show_reasoning=True, symbol=None):
         try:
-            quote = list(market_data['data'].values())[0]['quote']['USD']
+            quote = market_data['data'][symbol]['quote']['USD']
             
             portfolio_data = (
                 "=== PORTFOLIO METRICS ===\n"
+                f"Symbol: {symbol}\n"
                 f"Current Price: ${quote['price']:.2f}\n"
                 f"24h Change: {quote['percent_change_24h']:.2f}%\n"
                 f"7d Change: {quote['percent_change_7d']:.2f}%\n"
@@ -352,7 +413,15 @@ class PortfolioAgent(BaseAgent):
             )
 
             if self.provider:
-                prompt = f"""Analyze these portfolio metrics and provide investment recommendations:
+                # Add reasoning request to the prompt when show_reasoning is True
+                reasoning_request = """
+                For each point, please explain your reasoning by:
+                - Citing specific data points that support your conclusion
+                - Explaining the significance of these indicators
+                - Describing how you arrived at your assessment
+                """ if show_reasoning else ""
+
+                prompt = f"""Analyze these portfolio metrics and provide investment recommendations for {symbol}:
                 {portfolio_data}
                 
                 Please provide:
@@ -360,11 +429,22 @@ class PortfolioAgent(BaseAgent):
                 2. Position sizing recommendation
                 3. Risk management considerations
                 4. Short-term and long-term outlook
+                {reasoning_request}
                 """
                 
                 print(f"PortfolioAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
-                analysis = f"{response}"
+                
+                # If show_reasoning is False, try to extract just the conclusions
+                if not show_reasoning:
+                    lines = response.split('\n')
+                    analysis_lines = [
+                        line for line in lines 
+                        if not line.strip().startswith(('Because', 'This is based on', 'Given that', 'Considering'))
+                    ]
+                    analysis = '\n'.join(analysis_lines)
+                else:
+                    analysis = response
             else:
                 trend = quote['percent_change_24h']
                 action = "TAKE PROFIT" if trend > 5 else "BUY DIP" if trend < -5 else "HOLD"

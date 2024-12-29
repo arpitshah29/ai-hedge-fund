@@ -166,6 +166,8 @@ async def get_crypto_analysis(
 
         try:
             # Run agents concurrently for both providers
+            symbol = symbol.upper()
+            
             agent_tasks = []
             agent_functions = {
                 "market_data_agent": partial(analyze_market, agent_type="market"),
@@ -177,7 +179,7 @@ async def get_crypto_analysis(
             
             for agent_name, agent_func in agent_functions.items():
                 task = asyncio.create_task(agent_func(
-                    symbol=symbol,
+                    symbol=symbol,  # Now using normalized symbol
                     market_data=market_data,
                     price_data=price_data,
                     show_reasoning=True,
