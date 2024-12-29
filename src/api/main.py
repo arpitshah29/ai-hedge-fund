@@ -120,7 +120,8 @@ async def get_crypto_market_data(symbol: str):
         return {
             "price": quote['price'],
             "change24h": quote['percent_change_24h'],
-            "volume": quote['volume_24h']
+            "volume": quote['volume_24h'],
+            "marketcap": quote['market_cap']
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

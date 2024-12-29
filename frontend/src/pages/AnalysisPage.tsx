@@ -21,6 +21,7 @@ interface MarketData {
   price: number;
   change24h: number;
   volume: number;
+  marketcap: number;
 }
 
 interface AgentAnalysis {
@@ -45,6 +46,7 @@ const AnalysisPage = () => {
     price: 0,
     change24h: 0,
     volume: 0,
+    marketcap: 0,
   });
   const [agents, setAgents] = useState<AgentAnalysis[]>([
     { title: 'Market Data Agent', content: 'BTC price trend analysis shows consolidation phase...', loading: false },
@@ -186,8 +188,8 @@ const AnalysisPage = () => {
         <CardHeader>
           <CardTitle>Market Data</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-3 gap-4">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-4 gap-8">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Price</p>
               <p className="text-2xl font-bold">${marketData.price.toLocaleString()}</p>
@@ -202,6 +204,12 @@ const AnalysisPage = () => {
               <p className="text-sm font-medium text-muted-foreground">Volume</p>
               <p className="text-2xl font-bold">
                 ${(marketData.volume / 1_000_000_000).toFixed(2)}B
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Market Cap</p>
+              <p className="text-2xl font-bold">
+                ${(marketData.marketcap / 1_000_000_000).toFixed(2)}B
               </p>
             </div>
           </div>

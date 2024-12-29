@@ -24,7 +24,7 @@ from ..tools import (
 )
 import aioredis
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 class MarketDataAgent(BaseAgent):
