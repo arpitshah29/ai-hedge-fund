@@ -163,7 +163,7 @@ class SentimentAgent(BaseAgent):
                 {reasoning_request}
                 """
                 
-                print(f"SentimentAgent Prompt:\n{prompt}")
+                #print(f"SentimentAgent Prompt:\n{prompt}")
                 response = await self.provider.create_message(prompt)
                 
                 # If show_reasoning is False, try to extract just the conclusions
